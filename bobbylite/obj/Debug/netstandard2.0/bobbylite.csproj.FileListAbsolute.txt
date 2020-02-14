@@ -1,0 +1,8 @@
+/Users/robertluisi/source/repos/bobbylite/bobbylite/obj/Debug/netstandard2.0/bobbylite.csprojAssemblyReference.cache
+/Users/robertluisi/source/repos/bobbylite/bobbylite/obj/Debug/netstandard2.0/bobbylite.AssemblyInfoInputs.cache
+/Users/robertluisi/source/repos/bobbylite/bobbylite/obj/Debug/netstandard2.0/bobbylite.AssemblyInfo.cs
+/Users/robertluisi/source/repos/bobbylite/bobbylite/bin/Debug/netstandard2.0/bobbylite.deps.json
+/Users/robertluisi/source/repos/bobbylite/bobbylite/bin/Debug/netstandard2.0/bobbylite.dll
+/Users/robertluisi/source/repos/bobbylite/bobbylite/bin/Debug/netstandard2.0/bobbylite.pdb
+/Users/robertluisi/source/repos/bobbylite/bobbylite/obj/Debug/netstandard2.0/bobbylite.dll
+/Users/robertluisi/source/repos/bobbylite/bobbylite/obj/Debug/netstandard2.0/bobbylite.pdb
