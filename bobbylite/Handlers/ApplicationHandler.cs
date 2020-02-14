@@ -11,9 +11,9 @@ namespace bobbylite.Handlers
             {
                 HandleNotification(message);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                //
+                // Handle exception
             }
         }
 

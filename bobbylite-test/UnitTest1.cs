@@ -29,7 +29,7 @@ namespace bobbylite
                     try {
                         instance.Start();
                     } catch (Exception) {
-                        // Handle Exception
+                        // Handle exception
                     }
                 });
             }
