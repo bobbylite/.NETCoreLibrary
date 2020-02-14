@@ -7,9 +7,13 @@ Run the following in your terminal.
 
 ### Clone the code 
 ```bash
-git clone https://github.com/bobbylite/telephone-ts.git
-cd telephone-ts/
+git clone https://github.com/bobbylite/.NETCoreLibrary.git
+cd .NETCoreLibrary/
 ```
+### .NET Reference Guide
+https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-add-reference
+
+
 ### Hot to build
 ```bash
 dotnet build
