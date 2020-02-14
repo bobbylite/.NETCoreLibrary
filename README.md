@@ -23,102 +23,180 @@ dotnet test bobbylite-test/bobbylite-test.csproj
 ## How to use in project
 
 ### Step 1
-Create your Event Interfaces.  This will explain what you want your event to send over our line! 
-```typescript
-export interface IHelloEvent {
-    msg: string;
+Implement your Event so you can have everything you need.  Maybe you want to setup a service for handling an event later?  
+```csharp 
+using bobbylite.Notifications;
+
+namespace bobbylite {
+    public class ApplicationStartedNotification : IAppNotification {
+
+    }
 }
 ```
 
 ### Step 2
-Implement your Event so you can have everything you need.  Maybe you want to setup a service for handling an event later?  
-In this example we'll just use our greeting string we all love. 
-```typescript 
-export class HelloEvent implements IHelloEvent {
-    public msg: string = "Hello World!";
+This is where we will implement our event handler.  We must make sure to inherit the ApplicationHandler<T> class provided. 
+```csharp
+using System;
+using bobbylite.Handlers;
+
+namespace bobbylite {
+    public class ApplicationStartedNotificationHandler : ApplicationHandler<ApplicationStartedNotification> {
+        protected override void HandleNotification(ApplicationStartedNotification message) {
+            Console.WriteLine("Application Started Successfully...");
+        }
+    }
 }
 ```
 
-### Step 3 
-Next we'll create our event handler interfaces. This will explain what is needed to handle the event!
-```typescript 
-export interface IHelloHandler {
-    // anything you want your event handler to have.
+### Step 3
+```csharp
+using System;
+using bobbylite.Notifications;
+using Autofac;
+
+namespace bobbylite {
+    public class ApplicationStartupService : IAutoStart {
+
+        public NotificationManager NotificationManager {get; set;}
+
+        public void Start() => NotificationManager.Notify(new ApplicationStartedNotification());
+    }
 }
 ```
 
 ### Step 4
-This is where we will implement our event handler.  We must make sure to inherit/extend the BaseHandler class provided. 
-```typescript
-export class HelloHandler extends BaseHandler<IHelloEvent> implements IHelloHandler {
+Now we need to wire up/connect the ApplicationStartedEvent to the ApplicationStartedEventHandler and the ApplicationStartupService that inherits IAutoStart.
+```csharp
+using System.Reflection;
+using Autofac;
+using Module = Autofac.Module;
+using bobbylite.Notifications;
 
-    public constructor() {
-        super();
-    }
+namespace bobbylite {
+    public class ApplicationModule : Module {
+        protected override void Load(ContainerBuilder builder) {
+            StartUp(builder);
+            StartNotificationManager(builder);
+        }
 
-    protected HandleMessage(message: IHelloEvent) : IHelloEvent{
-        console.log(message);
+        private void StartUp(ContainerBuilder builder) {
+            builder.Register(c => new ApplicationStartupService())
+                .As<IAutoStart>()
+                .SingleInstance()
+                .PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies);
+        }
 
-        return message;
+        private void StartNotificationManager(ContainerBuilder builder) {
+            builder.RegisterType<ApplicationStartedNotificationHandler>()
+                .As<IHandleNotifications<ApplicationStartedNotification>>()
+                .PropertiesAutowired()
+                .SingleInstance();
+        }
     }
 }
 ```
 
 ### Step 5
-We now have everything we need to register, and emit events... Or create our quiet listening wire and shout on that wire! 
-Both Register and Call require the following: 
-TelephonetsInstance.Register<EventInterface>("EventInterface", HandlerClassReference);
-TelephonetsInstance.Call<EventInterface>("EventInterface", new EventClass);
-```typescript
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+Lastly we will build the Autofac container. This is the entry point to the toolkit.
+Below is an example of my test code. 
+```csharp
+using System;
+using System.Threading.Tasks;
+using Xunit;
+using bobbylite;
+using bobbylite.DependencyInjection;
+using Autofac;
 
-async function Test() {
-    var telephonets = new Telephonets();
+namespace bobbylite
+{
+    public class UnitTest1
+    {
+        private IContainer _container;
 
-    telephonets.Register<INotHelloEvent>("INotHelloEvent", NotHelloHandler);
-    telephonets.Register<IHelloEvent>("IHelloEvent", HelloHandler);
+        [Fact]
+        public void Test1()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterModule(new bobbylite.DependencyInjection.Modules.CoreModule());
+            builder.RegisterModule(new ApplicationModule());
+            _container = builder.Build();
 
+            AutoStart();
+        }
 
-    telephonets.Call<IHelloEvent>("IHelloEvent", new HelloEvent); // outputs -> HelloEvent { msg: 'Hello World!' }
-    await sleep(1000);
-    telephonets.Call<INotHelloEvent>("INotHelloEvent", new NotHelloEvent); // outputs -> NotHelloEvent { msg: 'Not Hello World!' }
+        private void AutoStart() {
+            var resolved = _container.Resolve<ObjectResolver>();
+            foreach(var instance in resolved.GetAll<IAutoStart>()) {
+                Task.Run(() => {
+                    try {
+                        instance.Start();
+                    } catch (Exception) {
+                        // Handle exception
+                    }
+                });
+            }
+        }
+    }
 }
 ```
 
 ## Behind the scenes
-Behind the scenes we have two important files that really auto-wire up the events to the handlers.  These two files are the telephonets.ts and BaseHandler.ts.  telephonets uses InversifyJs' Container to auto-wire similar to how Autofac or other IOC libraries work.  The BaseHandler is what we need our custom handlers to inherit from to ensure the project is structured properly.  Take a look below.
+Behind the scenes we have two important files that really auto-wire up the notifications to the handlers.
+This .NET Core lib uses Autofac's container and interfaces to auto-wire everything in the background. Out of the box
+you have NotificationManager because of this Core Module in the lib. 
+Take a look below.
 
-#### telephonets.ts
-```typescript
-export class Telephonets implements ITelephonets {
+#### Core Module
+```csharp
+using Autofac;
+using bobbylite.Notifications;
 
-    private container: Container;
-
-    public constructor() {
-        this.container = new Container();
-    }
-
-    public Register<T>(symbolString: string, Handler: any) : void {
-        this.container.bind<T>(symbolString).to(Handler);
-    }
-
-    public Call<T>(symbolString: string, message: any) : void {
-        this.container.get<IBaseHandler<T>>(symbolString).ReceiveMessage(message);
+namespace bobbylite.DependencyInjection.Modules
+{
+    public class CoreModule : Module
+    {
+        protected override void Load(ContainerBuilder builder)
+        {
+            builder.Register(c => new ObjectResolver(c.Resolve<IComponentContext>())).AsSelf().SingleInstance();
+            builder.RegisterType<NotificationManager>().AsSelf().SingleInstance();
+        }
     }
 }
 ```
 
-#### BaseHandler.ts
-```typescript
-@injectable()
-export abstract class BaseHandler<T> implements IBaseHandler<T> {
-    public ReceiveMessage(injection: T) : void {
-        try {
-            this.HandleMessage(injection);
-        } catch(err) {
-            console.log(err);
+#### Object Resolver
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Autofac;
+
+namespace bobbylite.DependencyInjection
+{
+    public class ObjectResolver
+    {
+        private readonly IComponentContext _componentContext;
+
+        public ObjectResolver(IComponentContext componentContext)
+        {
+            _componentContext = componentContext;
         }
+
+        public T Get<T>()
+        {
+            return _componentContext.Resolve<T>();
+        }
+
+        public T Get<T>(params Tuple<string, object>[] constructorArgs)
+        {
+            return _componentContext.Resolve<T>(constructorArgs.Select(arg => new NamedParameter(arg.Item1, arg.Item2)));
+        }
+
+        public IEnumerable<T> GetAll<T>()
+        {
+            return _componentContext.Resolve<IEnumerable<T>>();
+        } 
     }
-    protected abstract HandleMessage(message: T): T;
 }
 ```
