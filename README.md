@@ -1,4 +1,4 @@
-# bobbylite toolkit for .NET Core [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Telephone-ts%20TypeScript%20Architecture%20&url=https://github.com/bobbylite/telephone-ts&hashtags=Inversion-of-Control,Events,TypeScript,TelephoneTS)
+# bobbylite toolkit for .NET Core [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=bobbylite .NET Core toolkit%20&url=https://github.com/bobbylite/.NETCoreLibrary&hashtags=Inversion-of-Control,Events,Autofac,bobbylite,ioc, di)
 bobbylite toolkit is a class library that utilizes inversion of control dependency injection.
 
 ## Run example
